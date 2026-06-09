@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "voiceme",
+    "name": "VoiceMe",
     "slug": "voiceme",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "ios": {
-      "supportsTablet": true
-    },
+    "platforms": ["android"],
     "android": {
+      "package": "com.voiceme.aac",
+      "permissions": ["VIBRATE", "INTERNET"],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -18,8 +18,11 @@
       },
       "predictiveBackGestureEnabled": false
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    }
+    "plugins": [
+      [
+        "expo-speech",
+        {}
+      ]
+    ]
   }
 }
