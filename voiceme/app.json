@@ -18,11 +18,6 @@
       },
       "predictiveBackGestureEnabled": false
     },
-    "plugins": [
-      [
-        "expo-speech",
-        {}
-      ]
-    ]
+    "plugins": []
   }
 }

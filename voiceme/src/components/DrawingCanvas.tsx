@@ -1,14 +1,6 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useCallback } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import {
-  Canvas,
-  Path,
-  Skia,
-  useCanvasRef,
-  ImageFormat,
-  SkPath,
-} from '@shopify/react-native-skia';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { WebView } from 'react-native-webview';
 
 interface Props {
   onCapture: (base64: string) => void;
@@ -17,68 +9,98 @@ interface Props {
 
 const CANVAS_HEIGHT = 220;
 
-export default function DrawingCanvas({ onCapture, onClear }: Props) {
-  const canvasRef = useCanvasRef();
-  const [paths, setPaths] = useState<SkPath[]>([]);
-  const currentPathRef = useRef<SkPath | null>(null);
-  const [, forceUpdate] = useState(0);
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+const CANVAS_HTML = `<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: white; overflow: hidden; }
+  canvas { display: block; touch-action: none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  let debounce = null;
 
-  const triggerCapture = useCallback(() => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-    debounceTimerRef.current = setTimeout(() => {
-      const image = canvasRef.current?.makeImageSnapshot();
-      if (image) {
-        const base64 = image.encodeToBase64(ImageFormat.PNG, 100);
-        if (base64) {
-          onCapture(base64);
-        }
-      }
-    }, 1000);
-  }, [canvasRef, onCapture]);
+  function setup() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+  }
+  setup();
+  window.addEventListener('resize', setup);
 
-  const panGesture = Gesture.Pan()
-    .runOnJS(true)
-    .minDistance(0)
-    .onBegin((e) => {
-      const newPath = Skia.Path.Make();
-      newPath.moveTo(e.x, e.y);
-      currentPathRef.current = newPath;
-      forceUpdate((n) => n + 1);
-    })
-    .onUpdate((e) => {
-      if (currentPathRef.current) {
-        currentPathRef.current.lineTo(e.x, e.y);
-        forceUpdate((n) => n + 1);
-      }
-    })
-    .onEnd(() => {
-      if (currentPathRef.current) {
-        setPaths((prev) => [...prev, currentPathRef.current!]);
-        currentPathRef.current = null;
-        triggerCapture();
-      }
-    });
-
-  function handleClear() {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-    setPaths([]);
-    currentPathRef.current = null;
-    forceUpdate((n) => n + 1);
-    if (onClear) onClear();
+  function pos(e) {
+    const t = e.touches ? e.touches[0] : e;
+    const r = canvas.getBoundingClientRect();
+    return { x: t.clientX - r.left, y: t.clientY - r.top };
   }
 
-  const paint = {
-    color: 'black' as const,
-    strokeWidth: 4,
-    style: 'stroke' as const,
-    strokeCap: 'round' as const,
-    strokeJoin: 'round' as const,
-  };
+  canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const p = pos(e);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const p = pos(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    if (debounce) clearTimeout(debounce);
+    debounce = setTimeout(() => {
+      const b64 = canvas.toDataURL('image/png').split(',')[1];
+      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'capture', data: b64 }));
+    }, 1000);
+  }, { passive: false });
+
+  window.addEventListener('message', (e) => {
+    if (e.data === 'clear') {
+      if (debounce) clearTimeout(debounce);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  });
+  document.addEventListener('message', (e) => {
+    if (e.data === 'clear') {
+      if (debounce) clearTimeout(debounce);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  });
+</script>
+</body>
+</html>`;
+
+export default function DrawingCanvas({ onCapture, onClear }: Props) {
+  const webViewRef = useRef<WebView>(null);
+
+  const handleMessage = useCallback(
+    (event: { nativeEvent: { data: string } }) => {
+      try {
+        const msg = JSON.parse(event.nativeEvent.data);
+        if (msg.type === 'capture' && msg.data) {
+          onCapture(msg.data);
+        }
+      } catch {}
+    },
+    [onCapture]
+  );
+
+  function handleClear() {
+    webViewRef.current?.injectJavaScript("window.dispatchEvent(new MessageEvent('message', { data: 'clear' })); true;");
+    if (onClear) onClear();
+  }
 
   return (
     <View style={styles.container}>
@@ -95,41 +117,18 @@ export default function DrawingCanvas({ onCapture, onClear }: Props) {
         </TouchableOpacity>
       </View>
 
-      <GestureDetector gesture={panGesture}>
-        <Canvas ref={canvasRef} style={styles.canvas}>
-          {/* White background */}
-          <Path
-            path={`M 0 0 L 1000 0 L 1000 ${CANVAS_HEIGHT} L 0 ${CANVAS_HEIGHT} Z`}
-            color="white"
-            style="fill"
-          />
-
-          {/* Completed paths */}
-          {paths.map((p, idx) => (
-            <Path
-              key={idx}
-              path={p}
-              color={paint.color}
-              strokeWidth={paint.strokeWidth}
-              style={paint.style}
-              strokeCap={paint.strokeCap}
-              strokeJoin={paint.strokeJoin}
-            />
-          ))}
-
-          {/* Current in-progress path */}
-          {currentPathRef.current && (
-            <Path
-              path={currentPathRef.current}
-              color={paint.color}
-              strokeWidth={paint.strokeWidth}
-              style={paint.style}
-              strokeCap={paint.strokeCap}
-              strokeJoin={paint.strokeJoin}
-            />
-          )}
-        </Canvas>
-      </GestureDetector>
+      <WebView
+        ref={webViewRef}
+        source={{ html: CANVAS_HTML }}
+        style={styles.canvas}
+        onMessage={handleMessage}
+        scrollEnabled={false}
+        bounces={false}
+        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
+        originWhitelist={['*']}
+        javaScriptEnabled
+      />
 
       <Text style={styles.hint}>Draw text with your finger or stylus</Text>
     </View>
