@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 interface Props {
   words: string[];
@@ -26,21 +27,22 @@ export default function PredictionBar({
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2196F3" />
-        <Text style={styles.loadingText}>Recognizing handwriting...</Text>
+        <ActivityIndicator size="small" color="#2563EB" />
+        <Text style={styles.loadingText}>Recognizing handwriting…</Text>
       </View>
     );
   }
 
-  const hasContent = words.length > 0 || sentences.length > 0;
-
-  if (!hasContent) return null;
+  if (words.length === 0 && sentences.length === 0) return null;
 
   return (
     <View style={styles.container}>
       {words.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Word suggestions:</Text>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="text" size={12} color="#64748B" />
+            <Text style={styles.sectionLabel}>Word suggestions</Text>
+          </View>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -64,8 +66,11 @@ export default function PredictionBar({
       )}
 
       {sentences.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Sentence suggestions:</Text>
+        <View style={[styles.section, { marginBottom: 0 }]}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="chatbubble-ellipses-outline" size={12} color="#64748B" />
+            <Text style={styles.sectionLabel}>Sentence suggestions</Text>
+          </View>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -81,7 +86,7 @@ export default function PredictionBar({
                 accessibilityRole="button"
                 accessibilityLabel={`Sentence suggestion: ${sentence}`}
               >
-                <Text style={styles.sentenceChipText}>{sentence}</Text>
+                <Text style={styles.sentenceChipText} numberOfLines={2}>{sentence}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -93,68 +98,93 @@ export default function PredictionBar({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FAFAFA',
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    paddingVertical: 8,
-    marginTop: 4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    marginHorizontal: 16,
+    marginTop: 12,
+    paddingTop: 10,
+    paddingBottom: 10,
+    elevation: 2,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
   loadingContainer: {
-    paddingVertical: 20,
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FAFAFA',
-    marginTop: 4,
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 16,
+    marginHorizontal: 16,
+    marginTop: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    elevation: 2,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
   loadingText: {
-    marginTop: 8,
-    fontSize: 16,
-    color: '#555',
+    fontSize: 15,
+    color: '#475569',
+    fontWeight: '500',
   },
   section: {
     marginBottom: 8,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginLeft: 14,
+    marginBottom: 8,
+  },
   sectionLabel: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '600',
-    marginLeft: 12,
-    marginBottom: 6,
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.7,
   },
   chipRow: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     gap: 8,
     flexDirection: 'row',
     alignItems: 'center',
   },
   wordChip: {
-    backgroundColor: '#E3F2FD',
+    backgroundColor: '#EFF6FF',
     borderRadius: 24,
-    height: 48,
+    height: 44,
     paddingHorizontal: 18,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#90CAF9',
+    borderColor: '#BFDBFE',
   },
   wordChipText: {
-    fontSize: 20,
-    color: '#1565C0',
-    fontWeight: '500',
+    fontSize: 18,
+    color: '#1D4ED8',
+    fontWeight: '600',
   },
   sentenceChip: {
-    backgroundColor: '#F3E5F5',
-    borderRadius: 24,
-    height: 52,
+    backgroundColor: '#F0FDF4',
+    borderRadius: 12,
+    minHeight: 48,
     paddingHorizontal: 16,
+    paddingVertical: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    maxWidth: 280,
+    maxWidth: 260,
     borderWidth: 1,
-    borderColor: '#CE93D8',
+    borderColor: '#BBF7D0',
   },
   sentenceChipText: {
-    fontSize: 18,
-    color: '#6A1B9A',
+    fontSize: 15,
+    color: '#166534',
     fontWeight: '500',
+    textAlign: 'center',
   },
 });

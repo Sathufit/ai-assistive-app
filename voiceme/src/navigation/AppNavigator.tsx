@@ -7,29 +7,37 @@ import SettingsScreen from '../screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
 
+const NAV = '#0B1437';
+
 export default function AppNavigator() {
   return (
     <Tab.Navigator
       screenOptions={{
         tabBarStyle: {
-          backgroundColor: '#fff',
-          borderTopColor: '#e0e0e0',
-          height: 70,
+          backgroundColor: NAV,
+          borderTopWidth: 0,
+          height: 72,
+          paddingBottom: 10,
+          paddingTop: 8,
+          elevation: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 14,
+          fontSize: 12,
           fontWeight: '600',
-          marginBottom: 6,
+          letterSpacing: 0.2,
         },
-        tabBarActiveTintColor: '#4CAF50',
-        tabBarInactiveTintColor: '#888',
+        tabBarActiveTintColor: '#60A5FA',
+        tabBarInactiveTintColor: '#4B5E8A',
         headerStyle: {
-          backgroundColor: '#1565C0',
+          backgroundColor: NAV,
+          elevation: 0,
+          shadowOpacity: 0,
         },
-        headerTintColor: '#fff',
+        headerTintColor: '#FFFFFF',
         headerTitleStyle: {
-          fontSize: 22,
-          fontWeight: 'bold',
+          fontSize: 20,
+          fontWeight: '700',
+          letterSpacing: 0.4,
         },
       }}
     >
@@ -51,7 +59,7 @@ export default function AppNavigator() {
           title: 'Quick Phrases',
           tabBarLabel: 'Phrases',
           tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-            <Ionicons name="list" color={color} size={size} />
+            <Ionicons name="chatbubbles-outline" color={color} size={size} />
           ),
         }}
       />
@@ -62,7 +70,7 @@ export default function AppNavigator() {
           title: 'Settings',
           tabBarLabel: 'Settings',
           tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-            <Ionicons name="settings" color={color} size={size} />
+            <Ionicons name="settings-outline" color={color} size={size} />
           ),
         }}
       />

@@ -9,6 +9,7 @@ export interface AppSettings {
   speechRate: number;
   speechPitch: number;
   geminiApiKey: string;
+  elevenLabsApiKey: string;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -16,6 +17,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   speechRate: 0.5,
   speechPitch: 1.0,
   geminiApiKey: '',
+  elevenLabsApiKey: '',
 };
 
 export async function loadPhrases(): Promise<Phrase[]> {

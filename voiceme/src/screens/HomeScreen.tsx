@@ -1,10 +1,5 @@
 import React, { useCallback } from 'react';
-import {
-  View,
-  ScrollView,
-  StyleSheet,
-  Alert,
-} from 'react-native';
+import { View, ScrollView, StyleSheet, Alert } from 'react-native';
 import { useAppContext } from '../context/AppContext';
 import DrawingCanvas from '../components/DrawingCanvas';
 import TextDisplay from '../components/TextDisplay';
@@ -53,11 +48,7 @@ export default function HomeScreen() {
         }
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        Alert.alert(
-          'Recognition Failed',
-          `Could not recognize text: ${message}`,
-          [{ text: 'OK' }]
-        );
+        Alert.alert('Recognition Failed', `Could not recognize text: ${message}`, [{ text: 'OK' }]);
       } finally {
         setIsLoading(false);
       }
@@ -65,12 +56,23 @@ export default function HomeScreen() {
     [settings, setIsLoading, setRecognizedText, setPredictions]
   );
 
-  function handleSpeak() {
+  async function handleSpeak() {
     if (!recognizedText || recognizedText.trim() === '') {
-      Alert.alert('Nothing to speak', 'Please draw some text first.');
+      Alert.alert('Nothing to speak', 'Please draw some text or select a phrase first.');
       return;
     }
-    speak(recognizedText, settings.language, settings.speechRate, settings.speechPitch);
+    try {
+      await speak(recognizedText, settings.language, settings.speechRate, settings.speechPitch, settings.elevenLabsApiKey);
+    } catch (e: unknown) {
+      if (e instanceof Error && e.message === 'SINHALA_VOICE_MISSING') {
+        Alert.alert(
+          'Sinhala Voice Not Installed',
+          'Your device does not have the Sinhala (සිංහල) text-to-speech voice.\n\n' +
+          'To install it:\n1. Open Android Settings\n2. General Management → Language\n3. Text-to-speech → Google TTS settings\n4. Download Sinhala (Sri Lanka) voice pack',
+          [{ text: 'OK' }]
+        );
+      }
+    }
   }
 
   function handleWordTap(word: string) {
@@ -82,12 +84,16 @@ export default function HomeScreen() {
     setRecognizedText(sentence);
   }
 
-  function handlePhraseTap(phrase: Phrase) {
-    const textToSpeak =
-      settings.language === 'english' ? phrase.english : phrase.sinhala;
-    const lang =
-      settings.language === 'english' ? 'english' : 'sinhala';
-    speak(textToSpeak, lang, settings.speechRate, settings.speechPitch);
+  async function handlePhraseTap(phrase: Phrase) {
+    const textToSpeak = settings.language === 'english' ? phrase.english : phrase.sinhala;
+    const lang = settings.language === 'english' ? 'english' : 'sinhala';
+    try {
+      await speak(textToSpeak, lang, settings.speechRate, settings.speechPitch, settings.elevenLabsApiKey);
+    } catch (e: unknown) {
+      if (e instanceof Error && e.message === 'SINHALA_VOICE_MISSING') {
+        Alert.alert('Sinhala Voice Not Installed', 'Go to Android Settings → General Management → Language → Text-to-speech → Google TTS → install Sinhala voice pack.');
+      }
+    }
   }
 
   function handleClear() {
@@ -104,10 +110,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <DrawingCanvas onCapture={handleCapture} onClear={handleClear} />
-        <TextDisplay
-          text={recognizedText}
-          onTextChange={setRecognizedText}
-        />
+        <TextDisplay text={recognizedText} onTextChange={setRecognizedText} />
         <PredictionBar
           words={predictions.words}
           sentences={predictions.sentences}
@@ -115,12 +118,7 @@ export default function HomeScreen() {
           onSentenceTap={handleSentenceTap}
           isLoading={isLoading}
         />
-        <QuickPhrases
-          phrases={phrases}
-          language={settings.language}
-          onPhraseTap={handlePhraseTap}
-        />
-        {/* Bottom padding so content is not hidden behind speak button */}
+        <QuickPhrases phrases={phrases} language={settings.language} onPhraseTap={handlePhraseTap} />
         <View style={styles.bottomPad} />
       </ScrollView>
 
@@ -132,16 +130,16 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F1F5F9',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 8,
+    paddingTop: 4,
     paddingBottom: 8,
   },
   bottomPad: {
-    height: 16,
+    height: 12,
   },
 });

@@ -1,11 +1,6 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Phrase } from '../constants/defaultPhrases';
 
 interface Props {
@@ -18,13 +13,15 @@ export default function QuickPhrases({ phrases, language, onPhraseTap }: Props) 
   function getDisplayText(phrase: Phrase): string {
     if (language === 'english') return phrase.english;
     if (language === 'sinhala') return phrase.sinhala;
-    // 'both': show sinhala first
     return phrase.sinhala;
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Quick Phrases</Text>
+      <View style={styles.header}>
+        <Ionicons name="flash-outline" size={13} color="#64748B" />
+        <Text style={styles.label}>Quick Phrases</Text>
+      </View>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -44,6 +41,7 @@ export default function QuickPhrases({ phrases, language, onPhraseTap }: Props) 
             {language === 'both' && (
               <Text style={styles.chipTextSecondary}>{phrase.english}</Text>
             )}
+            <View style={styles.speakDot} />
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -53,44 +51,64 @@ export default function QuickPhrases({ phrases, language, onPhraseTap }: Props) 
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 8,
+    marginTop: 12,
     paddingBottom: 4,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginLeft: 16,
+    marginBottom: 10,
+  },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-    marginLeft: 12,
-    marginBottom: 6,
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.7,
   },
   row: {
-    paddingHorizontal: 12,
-    gap: 8,
+    paddingHorizontal: 16,
+    gap: 10,
     flexDirection: 'row',
     alignItems: 'center',
   },
   chip: {
-    backgroundColor: '#FFF8E1',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#FFD54F',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    minHeight: 60,
+    borderColor: '#E2E8F0',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    minHeight: 64,
     justifyContent: 'center',
     alignItems: 'center',
-    maxWidth: 200,
+    maxWidth: 180,
+    elevation: 1,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
   chipTextPrimary: {
-    fontSize: 20,
-    color: '#333',
+    fontSize: 19,
+    color: '#0F172A',
     fontWeight: '600',
     textAlign: 'center',
+    lineHeight: 26,
   },
   chipTextSecondary: {
-    fontSize: 13,
-    color: '#666',
-    marginTop: 2,
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 3,
     textAlign: 'center',
+  },
+  speakDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#059669',
+    marginTop: 6,
   },
 });

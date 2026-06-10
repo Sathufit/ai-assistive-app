@@ -1,5 +1,6 @@
 import React, { useRef, useCallback } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
 
 interface Props {
@@ -7,7 +8,7 @@ interface Props {
   onClear?: () => void;
 }
 
-const CANVAS_HEIGHT = 220;
+const CANVAS_HEIGHT = 290;
 
 const CANVAS_HTML = `<!DOCTYPE html>
 <html>
@@ -15,7 +16,7 @@ const CANVAS_HTML = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: white; overflow: hidden; }
+  body { background: #FFFFFF; overflow: hidden; }
   canvas { display: block; touch-action: none; }
 </style>
 </head>
@@ -24,15 +25,30 @@ const CANVAS_HTML = `<!DOCTYPE html>
 <script>
   const canvas = document.getElementById('c');
   const ctx = canvas.getContext('2d');
+  let drawing = false;
   let debounce = null;
+
+  function drawGuides() {
+    ctx.save();
+    ctx.strokeStyle = '#EEF2FF';
+    ctx.lineWidth = 1;
+    for (let y = 68; y < canvas.height - 16; y += 68) {
+      ctx.beginPath();
+      ctx.moveTo(20, y);
+      ctx.lineTo(canvas.width - 20, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
 
   function setup() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#1E293B';
+    ctx.lineWidth = 3;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+    drawGuides();
   }
   setup();
   window.addEventListener('resize', setup);
@@ -45,6 +61,7 @@ const CANVAS_HTML = `<!DOCTYPE html>
 
   canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
+    drawing = true;
     const p = pos(e);
     ctx.beginPath();
     ctx.moveTo(p.x, p.y);
@@ -52,6 +69,7 @@ const CANVAS_HTML = `<!DOCTYPE html>
 
   canvas.addEventListener('touchmove', (e) => {
     e.preventDefault();
+    if (!drawing) return;
     const p = pos(e);
     ctx.lineTo(p.x, p.y);
     ctx.stroke();
@@ -59,6 +77,7 @@ const CANVAS_HTML = `<!DOCTYPE html>
 
   canvas.addEventListener('touchend', (e) => {
     e.preventDefault();
+    drawing = false;
     if (debounce) clearTimeout(debounce);
     debounce = setTimeout(() => {
       const b64 = canvas.toDataURL('image/png').split(',')[1];
@@ -70,12 +89,14 @@ const CANVAS_HTML = `<!DOCTYPE html>
     if (e.data === 'clear') {
       if (debounce) clearTimeout(debounce);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawGuides();
     }
   });
   document.addEventListener('message', (e) => {
     if (e.data === 'clear') {
       if (debounce) clearTimeout(debounce);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawGuides();
     }
   });
 </script>
@@ -98,14 +119,19 @@ export default function DrawingCanvas({ onCapture, onClear }: Props) {
   );
 
   function handleClear() {
-    webViewRef.current?.injectJavaScript("window.dispatchEvent(new MessageEvent('message', { data: 'clear' })); true;");
+    webViewRef.current?.injectJavaScript(
+      "window.dispatchEvent(new MessageEvent('message', { data: 'clear' })); true;"
+    );
     if (onClear) onClear();
   }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerText}>Draw here</Text>
+        <View style={styles.headerLeft}>
+          <Ionicons name="create-outline" size={17} color="#475569" />
+          <Text style={styles.headerText}>Handwriting</Text>
+        </View>
         <TouchableOpacity
           style={styles.clearButton}
           onPress={handleClear}
@@ -113,7 +139,8 @@ export default function DrawingCanvas({ onCapture, onClear }: Props) {
           accessibilityRole="button"
           accessibilityLabel="Clear drawing canvas"
         >
-          <Text style={styles.clearText}>CLR</Text>
+          <Ionicons name="trash-outline" size={15} color="#EF4444" />
+          <Text style={styles.clearText}>Clear</Text>
         </TouchableOpacity>
       </View>
 
@@ -130,57 +157,83 @@ export default function DrawingCanvas({ onCapture, onClear }: Props) {
         javaScriptEnabled
       />
 
-      <Text style={styles.hint}>Draw text with your finger or stylus</Text>
+      <View style={styles.footer}>
+        <Ionicons name="pencil-outline" size={13} color="#94A3B8" />
+        <Text style={styles.hint}>Write with finger or S Pen · auto-recognizes after 1 s</Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 12,
-    marginTop: 8,
-    borderRadius: 12,
+    marginHorizontal: 16,
+    marginTop: 12,
+    borderRadius: 16,
     overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: '#90CAF9',
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
+    elevation: 2,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#E3F2FD',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   headerText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#1565C0',
+    color: '#334155',
+    letterSpacing: 0.2,
   },
   clearButton: {
-    backgroundColor: '#F44336',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
     borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    minHeight: 40,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    minHeight: 36,
     justifyContent: 'center',
   },
   clearText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: '#EF4444',
+    fontSize: 14,
+    fontWeight: '600',
   },
   canvas: {
     width: '100%',
     height: CANVAS_HEIGHT,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
+  },
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: '#F8FAFC',
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
   },
   hint: {
-    fontSize: 13,
-    color: '#888',
-    textAlign: 'center',
-    paddingVertical: 4,
-    backgroundColor: '#F5F5F5',
+    fontSize: 12,
+    color: '#94A3B8',
+    flex: 1,
   },
 });
