@@ -33,7 +33,7 @@ yarn-error.*
 # local env files
 .env*.local
 
-# API keys — keep local only, never commit
+# API keys — injected via EAS secrets at build time, never committed
 src/config/keys.ts
 
 # typescript
