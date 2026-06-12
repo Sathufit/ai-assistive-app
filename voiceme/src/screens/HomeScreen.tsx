@@ -64,11 +64,12 @@ export default function HomeScreen() {
     try {
       await speak(recognizedText, settings.language, settings.speechRate, settings.speechPitch, settings.elevenLabsApiKey);
     } catch (e: unknown) {
-      if (e instanceof Error && e.message === 'SINHALA_VOICE_MISSING') {
+      if (e instanceof Error && e.message === 'SINHALA_TTS_UNAVAILABLE') {
         Alert.alert(
-          'Sinhala Voice Not Installed',
-          'Your device does not have the Sinhala (සිංහල) text-to-speech voice.\n\n' +
-          'To install it:\n1. Open Android Settings\n2. General Management → Language\n3. Text-to-speech → Google TTS settings\n4. Download Sinhala (Sri Lanka) voice pack',
+          'Sinhala Voice Unavailable',
+          'Sinhala speech needs an internet connection (it uses the free Google voice).\n\n' +
+          'Please check Wi-Fi or mobile data and try again.\n\n' +
+          'Phrases spoken before are saved and still work offline.',
           [{ text: 'OK' }]
         );
       }
@@ -90,8 +91,11 @@ export default function HomeScreen() {
     try {
       await speak(textToSpeak, lang, settings.speechRate, settings.speechPitch, settings.elevenLabsApiKey);
     } catch (e: unknown) {
-      if (e instanceof Error && e.message === 'SINHALA_VOICE_MISSING') {
-        Alert.alert('Sinhala Voice Not Installed', 'Go to Android Settings → General Management → Language → Text-to-speech → Google TTS → install Sinhala voice pack.');
+      if (e instanceof Error && e.message === 'SINHALA_TTS_UNAVAILABLE') {
+        Alert.alert(
+          'Sinhala Voice Unavailable',
+          'Sinhala speech needs an internet connection. Please check Wi-Fi or mobile data and try again.'
+        );
       }
     }
   }

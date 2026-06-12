@@ -173,8 +173,8 @@ export default function SettingsScreen() {
           )}
         </View>
         <Text style={styles.sectionDesc}>
-          Natural AI English voice — completely free (10,000 characters/month, no credit card).{'\n'}
-          Sinhala text always uses the device voice.
+          Optional premium English voice — free (10,000 characters/month, no credit card).{'\n'}
+          Without it, the clear Google voice is used. Sinhala always uses the Google voice.
         </Text>
         <TextInput
           style={styles.apiKeyInput}
@@ -212,6 +212,7 @@ export default function SettingsScreen() {
         </View>
         <Text style={styles.sectionDesc}>
           Required for handwriting recognition and AI predictions.
+          {settings.geminiApiKey.trim() !== '' ? ' A key is already active.' : ''}
         </Text>
         <TextInput
           style={styles.apiKeyInput}

@@ -1,5 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Phrase, DEFAULT_PHRASES } from '../constants/defaultPhrases';
+import {
+  BUILT_IN_GEMINI_API_KEY,
+  BUILT_IN_ELEVENLABS_API_KEY,
+} from '../config/keys';
 
 const PHRASES_KEY = '@voiceme_phrases';
 const SETTINGS_KEY = '@voiceme_settings';
@@ -16,9 +20,19 @@ const DEFAULT_SETTINGS: AppSettings = {
   language: 'both',
   speechRate: 0.5,
   speechPitch: 1.0,
-  geminiApiKey: '',
-  elevenLabsApiKey: '',
+  geminiApiKey: BUILT_IN_GEMINI_API_KEY,
+  elevenLabsApiKey: BUILT_IN_ELEVENLABS_API_KEY,
 };
+
+// Keys typed in Settings win; empty stored keys fall back to built-in ones
+function withBuiltInKeys(settings: AppSettings): AppSettings {
+  return {
+    ...settings,
+    geminiApiKey: settings.geminiApiKey?.trim() || BUILT_IN_GEMINI_API_KEY,
+    elevenLabsApiKey:
+      settings.elevenLabsApiKey?.trim() || BUILT_IN_ELEVENLABS_API_KEY,
+  };
+}
 
 export async function loadPhrases(): Promise<Phrase[]> {
   try {
@@ -49,7 +63,7 @@ export async function loadSettings(): Promise<AppSettings> {
     const stored = await AsyncStorage.getItem(SETTINGS_KEY);
     if (stored) {
       const parsed = JSON.parse(stored) as Partial<AppSettings>;
-      return { ...DEFAULT_SETTINGS, ...parsed };
+      return withBuiltInKeys({ ...DEFAULT_SETTINGS, ...parsed });
     }
     return DEFAULT_SETTINGS;
   } catch (error) {

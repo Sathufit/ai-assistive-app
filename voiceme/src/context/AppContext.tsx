@@ -11,6 +11,10 @@ import {
   loadSettings,
   AppSettings,
 } from '../services/storageService';
+import {
+  BUILT_IN_GEMINI_API_KEY,
+  BUILT_IN_ELEVENLABS_API_KEY,
+} from '../config/keys';
 
 interface Predictions {
   words: string[];
@@ -47,7 +51,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     language: 'both',
     speechRate: 0.5,
     speechPitch: 1.0,
-    geminiApiKey: '',
+    geminiApiKey: BUILT_IN_GEMINI_API_KEY,
+    elevenLabsApiKey: BUILT_IN_ELEVENLABS_API_KEY,
   });
   const [isLoading, setIsLoading] = useState(false);
 

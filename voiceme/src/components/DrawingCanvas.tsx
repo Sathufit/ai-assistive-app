@@ -9,6 +9,9 @@ interface Props {
 }
 
 const CANVAS_HEIGHT = 290;
+// Sinhala letters need several strokes — wait long enough that a pause
+// between strokes doesn't trigger recognition mid-word
+const AUTO_CAPTURE_DELAY_MS = 2200;
 
 const CANVAS_HTML = `<!DOCTYPE html>
 <html>
@@ -27,6 +30,7 @@ const CANVAS_HTML = `<!DOCTYPE html>
   const ctx = canvas.getContext('2d');
   let drawing = false;
   let debounce = null;
+  let hasNewInk = false;
 
   function drawGuides() {
     ctx.save();
@@ -41,17 +45,34 @@ const CANVAS_HTML = `<!DOCTYPE html>
     ctx.restore();
   }
 
+  function paintBackground() {
+    // A real white background is required: transparent pixels confuse
+    // the OCR model and break JPEG export
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawGuides();
+  }
+
   function setup() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     ctx.strokeStyle = '#1E293B';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 4;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    drawGuides();
+    paintBackground();
   }
   setup();
   window.addEventListener('resize', setup);
+
+  function capture() {
+    if (debounce) clearTimeout(debounce);
+    debounce = null;
+    if (!hasNewInk) return;
+    hasNewInk = false;
+    const b64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+    window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'capture', data: b64 }));
+  }
 
   function pos(e) {
     const t = e.touches ? e.touches[0] : e;
@@ -61,8 +82,10 @@ const CANVAS_HTML = `<!DOCTYPE html>
 
   canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
+    if (debounce) clearTimeout(debounce);
     drawing = true;
     const p = pos(e);
+    ctx.strokeStyle = '#1E293B';
     ctx.beginPath();
     ctx.moveTo(p.x, p.y);
   }, { passive: false });
@@ -73,32 +96,28 @@ const CANVAS_HTML = `<!DOCTYPE html>
     const p = pos(e);
     ctx.lineTo(p.x, p.y);
     ctx.stroke();
+    hasNewInk = true;
   }, { passive: false });
 
   canvas.addEventListener('touchend', (e) => {
     e.preventDefault();
     drawing = false;
     if (debounce) clearTimeout(debounce);
-    debounce = setTimeout(() => {
-      const b64 = canvas.toDataURL('image/png').split(',')[1];
-      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'capture', data: b64 }));
-    }, 1000);
+    debounce = setTimeout(capture, ${AUTO_CAPTURE_DELAY_MS});
   }, { passive: false });
 
-  window.addEventListener('message', (e) => {
-    if (e.data === 'clear') {
+  function handleCommand(data) {
+    if (data === 'clear') {
       if (debounce) clearTimeout(debounce);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawGuides();
+      debounce = null;
+      hasNewInk = false;
+      paintBackground();
+    } else if (data === 'capture-now') {
+      capture();
     }
-  });
-  document.addEventListener('message', (e) => {
-    if (e.data === 'clear') {
-      if (debounce) clearTimeout(debounce);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawGuides();
-    }
-  });
+  }
+  window.addEventListener('message', (e) => handleCommand(e.data));
+  document.addEventListener('message', (e) => handleCommand(e.data));
 </script>
 </body>
 </html>`;
@@ -118,11 +137,19 @@ export default function DrawingCanvas({ onCapture, onClear }: Props) {
     [onCapture]
   );
 
-  function handleClear() {
+  function sendCommand(command: 'clear' | 'capture-now') {
     webViewRef.current?.injectJavaScript(
-      "window.dispatchEvent(new MessageEvent('message', { data: 'clear' })); true;"
+      `window.dispatchEvent(new MessageEvent('message', { data: '${command}' })); true;`
     );
+  }
+
+  function handleClear() {
+    sendCommand('clear');
     if (onClear) onClear();
+  }
+
+  function handleReadNow() {
+    sendCommand('capture-now');
   }
 
   return (
@@ -132,16 +159,28 @@ export default function DrawingCanvas({ onCapture, onClear }: Props) {
           <Ionicons name="create-outline" size={17} color="#475569" />
           <Text style={styles.headerText}>Handwriting</Text>
         </View>
-        <TouchableOpacity
-          style={styles.clearButton}
-          onPress={handleClear}
-          accessible
-          accessibilityRole="button"
-          accessibilityLabel="Clear drawing canvas"
-        >
-          <Ionicons name="trash-outline" size={15} color="#EF4444" />
-          <Text style={styles.clearText}>Clear</Text>
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            style={styles.readButton}
+            onPress={handleReadNow}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Recognize handwriting now"
+          >
+            <Ionicons name="scan-outline" size={15} color="#2563EB" />
+            <Text style={styles.readText}>Read</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.clearButton}
+            onPress={handleClear}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Clear drawing canvas"
+          >
+            <Ionicons name="trash-outline" size={15} color="#EF4444" />
+            <Text style={styles.clearText}>Clear</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <WebView
@@ -159,7 +198,9 @@ export default function DrawingCanvas({ onCapture, onClear }: Props) {
 
       <View style={styles.footer}>
         <Ionicons name="pencil-outline" size={13} color="#94A3B8" />
-        <Text style={styles.hint}>Write with finger or S Pen · auto-recognizes after 1 s</Text>
+        <Text style={styles.hint}>
+          Write with finger or S Pen · reads automatically, or tap Read
+        </Text>
       </View>
     </View>
   );
@@ -197,6 +238,29 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#334155',
     letterSpacing: 0.2,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  readButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    minHeight: 36,
+    justifyContent: 'center',
+  },
+  readText: {
+    color: '#2563EB',
+    fontSize: 14,
+    fontWeight: '600',
   },
   clearButton: {
     flexDirection: 'row',

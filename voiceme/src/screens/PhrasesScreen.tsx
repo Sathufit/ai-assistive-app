@@ -100,8 +100,11 @@ export default function PhrasesScreen() {
     try {
       await speak(textToSpeak, lang, settings.speechRate, settings.speechPitch, settings.elevenLabsApiKey);
     } catch (e: unknown) {
-      if (e instanceof Error && e.message === 'SINHALA_VOICE_MISSING') {
-        Alert.alert('Sinhala Voice Not Installed', 'Go to Android Settings → General Management → Language → Text-to-speech → Google TTS → install Sinhala voice pack.');
+      if (e instanceof Error && e.message === 'SINHALA_TTS_UNAVAILABLE') {
+        Alert.alert(
+          'Sinhala Voice Unavailable',
+          'Sinhala speech needs an internet connection. Please check Wi-Fi or mobile data and try again.'
+        );
       }
     }
   }
