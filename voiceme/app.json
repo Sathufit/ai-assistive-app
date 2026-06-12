@@ -13,7 +13,11 @@
       "package": "com.voiceme.aac",
       "permissions": [
         "VIBRATE",
-        "INTERNET"
+        "INTERNET",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -28,6 +32,11 @@
       "expo-status-bar",
       "expo-font",
       "expo-asset"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "58b9912c-659b-4af5-a322-d43ea5f65f88"
+      }
+    }
   }
 }

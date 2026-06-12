@@ -86,8 +86,15 @@ const CANVAS_HTML = `<!DOCTYPE html>
     drawing = true;
     const p = pos(e);
     ctx.strokeStyle = '#1E293B';
+    // Draw a dot so a tap with no move still leaves a visible mark
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, ctx.lineWidth / 2, 0, Math.PI * 2);
+    ctx.fillStyle = '#1E293B';
+    ctx.fill();
+    // Start fresh path for the stroke that follows
     ctx.beginPath();
     ctx.moveTo(p.x, p.y);
+    hasNewInk = true;
   }, { passive: false });
 
   canvas.addEventListener('touchmove', (e) => {
@@ -96,6 +103,9 @@ const CANVAS_HTML = `<!DOCTYPE html>
     const p = pos(e);
     ctx.lineTo(p.x, p.y);
     ctx.stroke();
+    // Keep the path origin at current position so each segment is independent
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
     hasNewInk = true;
   }, { passive: false });
 

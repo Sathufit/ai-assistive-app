@@ -107,13 +107,16 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Canvas sits OUTSIDE the ScrollView so scroll gestures never
+          compete with drawing touches */}
+      <DrawingCanvas onCapture={handleCapture} onClear={handleClear} />
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <DrawingCanvas onCapture={handleCapture} onClear={handleClear} />
         <TextDisplay text={recognizedText} onTextChange={setRecognizedText} />
         <PredictionBar
           words={predictions.words}
@@ -140,7 +143,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 4,
+    paddingTop: 8,
     paddingBottom: 8,
   },
   bottomPad: {
