@@ -33,9 +33,6 @@ yarn-error.*
 # local env files
 .env*.local
 
-# API keys — injected via EAS secrets at build time, never committed
-src/config/keys.ts
-
 # typescript
 *.tsbuildinfo
 
